@@ -11,7 +11,7 @@ def get_db():
 db = get_db()
 
 # Global for helpline number
-HELPLINE = "+91-XXXXXXXXXX"
+HELPLINE = "+91-9204441036"
 
 def main():
     st.title("Welcome to Royal Ice Cream")
@@ -180,5 +180,6 @@ def user_dashboard(user_contact):
 
 if __name__ == "__main__":
     main()
+
 
 
