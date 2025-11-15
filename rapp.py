@@ -13,14 +13,14 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages
-def main_navbar():
+# Navbar for all pages - NOW WITH UNIQUE KEYS
+def main_navbar(page_name=""):
     col1, col2 = st.columns([5,1])
     with col1:
-        if st.button("👤 My Profile", key="navbar_profile"):
+        if st.button("👤 My Profile", key=f"navbar_profile_{page_name}"):
             st.session_state.page = "profile"
     with col2:
-        if st.button("🚪 Logout", key="navbar_logout"):
+        if st.button("🚪 Logout", key=f"navbar_logout_{page_name}"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.experimental_rerun()
@@ -34,7 +34,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     st.title("Welcome to Royal Ice Cream")
-    main_navbar()
+    main_navbar("main")
     st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
           caption="Royal Ice Cream", use_column_width=True)
     st.write(f"📞 Helpline: {HELPLINE}")
@@ -49,6 +49,7 @@ def main():
         user_login()
 
 def terms_and_conditions():
+    main_navbar("terms")
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
@@ -58,7 +59,7 @@ def send_otp(contact, mode):
     st.info(f"OTP sent to {contact} ({mode}) [simulation].")
 
 def admin_login():
-    main_navbar()
+    main_navbar("admin_login")
     st.header("Admin Login")
     mode = st.radio("Login via:", ["Mobile Number", "Email"], key="admin_login_mode")
     contact = st.text_input("Contact (Admin)", key="admin_login_contact")
@@ -70,7 +71,7 @@ def admin_login():
         admin_dashboard()
 
 def admin_dashboard():
-    main_navbar()
+    main_navbar("admin_dashboard")
     st.header("Admin Dashboard")
     st.subheader("Register New User")
     first_name = st.text_input("First Name (Admin)", key="admin_add_first")
@@ -128,7 +129,7 @@ def admin_dashboard():
         st.info("No products found.")
 
 def user_login():
-    main_navbar()
+    main_navbar("user_login")
     st.header("User Registration/Login")
     mode = st.radio("Login/Register via:", ["Mobile Number", "Email"], key="user_login_mode")
     contact = st.text_input("Contact (User)", key="user_login_contact")
@@ -153,6 +154,7 @@ def user_login():
         user_dashboard(st.session_state["user_contact"])
 
 def register_user(contact):
+    main_navbar("register_user")
     st.subheader("Register")
     first_name = st.text_input("First Name", key="user_register_first")
     last_name = st.text_input("Last Name", key="user_register_last")
@@ -175,7 +177,7 @@ def register_user(contact):
         st.session_state["user_register_mode"] = False
 
 def user_dashboard(contact):
-    main_navbar()
+    main_navbar("user_dashboard")
     st.subheader("Your Details")
     user = db.users.find_one({"contact": contact})
     st.write(user)
@@ -191,17 +193,17 @@ def user_dashboard(contact):
           <span> | Remaining: <b>{p['remaining_qty']}</b></span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}"):
+        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}_userdashboard"):
             cart.append(p["name"])
             st.session_state.cart = cart
             st.success(f"{p['name']} added to Cart!")
-        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}"):
+        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}_userdashboard"):
             wish.append(p["name"])
             st.session_state.wish = wish
             st.success(f"{p['name']} added to Wishlist!")
-        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}")
-        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}")
-        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}"):
+        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}_userdashboard")
+        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_userdashboard")
+        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_userdashboard"):
             db.feedback.insert_one({
                 "user": contact,
                 "product": p["name"],
@@ -233,7 +235,7 @@ def user_dashboard(contact):
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
 
 def user_profile():
-    main_navbar()
+    main_navbar("profile")
     st.header("My Profile")
     contact = st.session_state.get("user_contact", None)
     if contact:
