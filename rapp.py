@@ -3,63 +3,68 @@ from pymongo import MongoClient
 from datetime import datetime
 import bcrypt
 
-# Database setup
+# DB Setup (use your secrets)
 @st.cache_resource
 def get_db():
     client = MongoClient(st.secrets["mongodb"]["uri"])
     db = client[st.secrets["mongodb"]["database"]]
     return db
 db = get_db()
+
 HELPLINE = "+91-9204441036"
 
+# Navbar for all pages
 def main_navbar():
     col1, col2 = st.columns([5,1])
     with col1:
-        if st.button("👤 My Profile"):
+        if st.button("👤 My Profile", key="navbar_profile"):
             st.session_state.page = "profile"
     with col2:
-        if st.button("🚪 Logout"):
-            for k in st.session_state.keys():
+        if st.button("🚪 Logout", key="navbar_logout"):
+            for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.experimental_rerun()
 
 def main():
-    st.markdown("""<style>
-    .stButton > button {background-color: #6C63FF; color:white; font-weight:600;}
-    .stTitle {color: #1B2430;}
-    </style>""", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+        .stButton > button {background-color: #2266AA; color:white; font-weight:600;}
+        .stTitle {color: #A60056;}
+        .product-card {margin: 10px 0; padding: 12px; border: 1px solid #ececec; border-radius: 7px; box-shadow:2px 2px 18px #f3f3f3;}
+    </style>
+    """, unsafe_allow_html=True)
     st.title("Welcome to Royal Ice Cream")
     main_navbar()
-    st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",caption="Royal Ice Cream",use_column_width=True)
+    st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
+          caption="Royal Ice Cream", use_column_width=True)
     st.write(f"📞 Helpline: {HELPLINE}")
-    option = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"])
-    if option == "Terms & Conditions":
-        terms_and_conditions()
-    elif option == "Admin":
-        admin_login()
-    elif option == "User":
-        user_login()
+    page = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"], key="page_selector")
     if st.session_state.get("page") == "profile":
         user_profile()
+    elif page == "Terms & Conditions":
+        terms_and_conditions()
+    elif page == "Admin":
+        admin_login()
+    elif page == "User":
+        user_login()
 
 def terms_and_conditions():
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
-    if st.button("Back"):
+    if st.button("Back", key="terms_back"):
         st.session_state.page = None
 
 def send_otp(contact, mode):
     st.info(f"OTP sent to {contact} ({mode}) [simulation].")
 
-# Admin login/registration
 def admin_login():
     main_navbar()
     st.header("Admin Login")
-    mode = st.radio("Login via:", ["Mobile Number", "Email"])
-    contact = st.text_input("Contact (Admin)")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        # Implement password check
+    mode = st.radio("Login via:", ["Mobile Number", "Email"], key="admin_login_mode")
+    contact = st.text_input("Contact (Admin)", key="admin_login_contact")
+    password = st.text_input("Password", type="password", key="admin_login_password")
+    if st.button("Login", key="admin_login_btn"):
+        # Simulate admin password (improve as per your real user logic)
         st.session_state["admin_logged_in"] = True
     if st.session_state.get("admin_logged_in"):
         admin_dashboard()
@@ -68,64 +73,105 @@ def admin_dashboard():
     main_navbar()
     st.header("Admin Dashboard")
     st.subheader("Register New User")
-    first_name = st.text_input("First Name (Admin)")
-    last_name = st.text_input("Last Name (Admin)")
-    age = st.number_input("Age", min_value=1, max_value=120)
-    user_password = st.text_input("Set Password", type="password")
-    if st.button("Create User"):
+    first_name = st.text_input("First Name (Admin)", key="admin_add_first")
+    last_name = st.text_input("Last Name (Admin)", key="admin_add_last")
+    age = st.number_input("Age (Admin)", min_value=1, max_value=120, key="admin_add_age")
+    user_password = st.text_input("Set Password", type="password", key="admin_set_pw")
+    if st.button("Create User", key="admin_user_create_btn"):
         pw_hash = bcrypt.hashpw(user_password.encode(), bcrypt.gensalt())
-        db.users.insert_one({"first_name": first_name, "last_name": last_name, "age": age, "password": pw_hash, "created_by": "admin"})
+        db.users.insert_one({
+            "first_name": first_name,
+            "last_name": last_name,
+            "age": age,
+            "password": pw_hash,
+            "created_by": "admin"
+        })
         st.success("User created!")
+    # Product management
     st.subheader("Manage Products")
-    prod_name = st.text_input("Product Name")
-    price = st.number_input("Price (₹)", min_value=1)
-    qty = st.number_input("Total Qty", min_value=1)
-    if st.button("Add Product"):
-        db.products.insert_one({"name": prod_name,"price": price,"total_qty": qty,"remaining_qty": qty,"daily_sale": 0,"likes": 0,"added_on": datetime.now()})
+    prod_name = st.text_input("Product Name", key="prod_add_name")
+    price = st.number_input("Price (₹)", min_value=1, key="prod_add_price")
+    qty = st.number_input("Total Qty", min_value=1, key="prod_add_qty")
+    if st.button("Add Product", key="prod_add_btn"):
+        db.products.insert_one({
+            "name": prod_name,
+            "price": price,
+            "total_qty": qty,
+            "remaining_qty": qty,
+            "daily_sale": 0,
+            "likes": 0,
+            "added_on": datetime.now()
+        })
         st.success("Product added!")
-    # Rest like analytics, remove, same as existing
+    remove_prod = st.text_input("Product name to remove", key="prod_remove_name")
+    if st.button("Remove Product", key="prod_remove_btn"):
+        db.products.delete_one({"name": remove_prod})
+        st.warning("Product removed!")
+    # Analytics
+    st.subheader("Product Analytics")
+    products = list(db.products.find())
+    if products:
+        fav_sell = max(products, key=lambda x: x.get("daily_sale", 0))
+        fav_like = max(products, key=lambda x: x.get("likes", 0))
+        st.markdown(
+            f"**Most Sold:** {fav_sell['name']} ({fav_sell['daily_sale']} sold) :star:<br>" +
+            f"**Most Liked:** {fav_like['name']} ({fav_like['likes']} likes) :heart:",
+            unsafe_allow_html=True)
+        for i, p in enumerate(products):
+            st.markdown(
+                f"<div class='product-card'><span style='font-size:18px;'>{p['name']}</span> | "
+                f"Price: <span style='color:red;'>₹{p['price']}</span> | Remaining: {p['remaining_qty']} | Daily Sale: {p['daily_sale']}</div>",
+                unsafe_allow_html=True)
+            if p["daily_sale"] == 0:
+                st.info(f"📉 Suggest Discount on {p['name']}", icon="🔔")
+    else:
+        st.info("No products found.")
 
 def user_login():
     main_navbar()
     st.header("User Registration/Login")
-    mode = st.radio("Login/Register via:", ["Mobile Number", "Email"])
-    contact = st.text_input("Contact (User)")
-    password = st.text_input("Password", type="password")
-    if st.button("Send OTP"):
+    mode = st.radio("Login/Register via:", ["Mobile Number", "Email"], key="user_login_mode")
+    contact = st.text_input("Contact (User)", key="user_login_contact")
+    password = st.text_input("Password", type="password", key="user_login_pw")
+    if st.button("Send OTP", key="user_login_otp_btn"):
         send_otp(contact, mode)
         # Check if user exists
         user = db.users.find_one({"contact": contact})
         if not user:
             st.session_state["user_register_mode"] = True
+            st.session_state["user_contact_for_reg"] = contact
         else:
-            # Password check (bcrypt)
             if bcrypt.checkpw(password.encode(), user["password"]):
                 st.success("Logged in successfully!")
                 st.session_state["user_logged_in"] = True
+                st.session_state["user_contact"] = contact
             else:
                 st.error("Wrong password!")
-
     if st.session_state.get("user_register_mode"):
-        register_user(contact)
+        register_user(st.session_state["user_contact_for_reg"])
     if st.session_state.get("user_logged_in"):
-        user_dashboard(contact)
+        user_dashboard(st.session_state["user_contact"])
 
 def register_user(contact):
     st.subheader("Register")
-    first_name = st.text_input("First Name (Reg)")
-    last_name = st.text_input("Last Name (Reg)")
-    age = st.number_input("Age", min_value=1, max_value=120)
-    location = st.text_input("Location")
-    password = st.text_input("Set Password", type="password")
-    if st.button("Register"):
+    first_name = st.text_input("First Name", key="user_register_first")
+    last_name = st.text_input("Last Name", key="user_register_last")
+    age = st.number_input("Age", min_value=1, max_value=120, key="user_register_age")
+    location = st.text_input("Location", key="user_register_loc")
+    password = st.text_input("Set Password", type="password", key="user_register_pw")
+    if st.button("Register", key="user_register_btn"):
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
         db.users.insert_one({
-            "contact": contact, "first_name": first_name,
-            "last_name": last_name, "age": age,
-            "location": location, "password": pw_hash
+            "contact": contact,
+            "first_name": first_name,
+            "last_name": last_name,
+            "age": age,
+            "location": location,
+            "password": pw_hash
         })
         st.success("Registered!")
         st.session_state["user_logged_in"] = True
+        st.session_state["user_contact"] = contact
         st.session_state["user_register_mode"] = False
 
 def user_dashboard(contact):
@@ -135,19 +181,32 @@ def user_dashboard(contact):
     st.write(user)
     st.subheader("Products")
     products = list(db.products.find())
-    cart, wishlist = [], []
-    for p in products:
-        st.markdown(f"**{p['name']}** | Price: <span style='color:red;'>₹{p['price']}</span> | Remaining: **{p['remaining_qty']}**", unsafe_allow_html=True)
-        if st.button(f"Add {p['name']} to Cart"):
+    cart = st.session_state.get("cart", [])
+    wish = st.session_state.get("wish", [])
+    for idx, p in enumerate(products):
+        st.markdown(f"""
+        <div class="product-card">
+          <span style="font-size:18px;font-weight:600">{p['name']}</span> <br>
+          <span style="color:#ea2020">₹{p['price']}</span>
+          <span> | Remaining: <b>{p['remaining_qty']}</b></span>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}"):
             cart.append(p["name"])
-        if st.button(f"Add {p['name']} to Wishlist"):
-            wishlist.append(p["name"])
-        rating = st.slider(f"Rate {p['name']}", 1, 5, 3)
-        feedback = st.text_input(f"Feedback for {p['name']}")
-        if st.button(f"Submit Feedback for {p['name']}"):
+            st.session_state.cart = cart
+            st.success(f"{p['name']} added to Cart!")
+        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}"):
+            wish.append(p["name"])
+            st.session_state.wish = wish
+            st.success(f"{p['name']} added to Wishlist!")
+        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}")
+        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}")
+        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}"):
             db.feedback.insert_one({
-                "user": contact, "product": p["name"],
-                "rating": rating, "text": feedback,
+                "user": contact,
+                "product": p["name"],
+                "rating": rating,
+                "text": feedback,
                 "date": datetime.now()
             })
             db.products.update_one({"name": p["name"]}, {"$inc": {"likes": 1}})
@@ -155,22 +214,26 @@ def user_dashboard(contact):
         if p["daily_sale"] == 0:
             st.info(f"Discount available on {p['name']}!")
     st.subheader("Cart")
-    st.write(cart)
+    st.write(st.session_state.get("cart", []))
     st.subheader("Wishlist")
-    st.write(wishlist)
-    if st.button("Place Order"):
+    st.write(st.session_state.get("wish", []))
+    if st.button("Place Order", key="order_place_btn"):
         order_id = db.orders.insert_one({
-            "user": contact, "cart": cart,
-            "timestamp": datetime.now(), "payment": "Pending"
+            "user": contact,
+            "cart": st.session_state.get("cart", []),
+            "timestamp": datetime.now(),
+            "payment": "Pending"
         }).inserted_id
         st.success("Order placed successfully!")
+        total = sum([db.products.find_one({'name': i})['price'] for i in st.session_state.get("cart", [])])
         st.write("---")
         st.write(f"Invoice ID: {order_id}")
-        st.markdown(f"Total Amount: <span style='font-size:22px;color:green;'>₹{sum([db.products.find_one({'name': i})['price'] for i in cart])}</span>", unsafe_allow_html=True)
+        st.markdown(f"Total Amount: <span style='font-size:22px;color:green;'>₹{total}</span>", unsafe_allow_html=True)
         st.write("Payment method: (Online/Offline)")
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
 
 def user_profile():
+    main_navbar()
     st.header("My Profile")
     contact = st.session_state.get("user_contact", None)
     if contact:
@@ -178,10 +241,8 @@ def user_profile():
         st.write(user)
     else:
         st.write("No profile loaded.")
-    if st.button("Back"):
+    if st.button("Back", key="profile_back_btn"):
         st.session_state.page = None
 
 if __name__ == "__main__":
     main()
-
-
