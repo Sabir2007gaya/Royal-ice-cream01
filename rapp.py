@@ -4,7 +4,6 @@ from pymongo import MongoClient
 from datetime import datetime
 import bcrypt
 
-# DB Setup (use your secrets)
 @st.cache_resource
 def get_db():
     client = MongoClient(st.secrets["mongodb"]["uri"])
@@ -14,15 +13,14 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages - ONLY render from main()
 def main_navbar(page_name=""):
     col1, col2 = st.columns([5,1])
     with col1:
-        if st.button("👤 My Profile", key=f"navbar_profile_{page_name}"):
+        if st.button("👤 My Profile", key=f"profile_{page_name}"):
             st.session_state.page = "profile"
             st.experimental_rerun()
     with col2:
-        if st.button("🚪 Logout", key=f"navbar_logout_{page_name}"):
+        if st.button("🚪 Logout", key=f"logout_{page_name}"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.experimental_rerun()
@@ -35,15 +33,14 @@ def main():
         .product-card {margin: 10px 0; padding: 12px; border: 1px solid #ececec; border-radius: 7px; box-shadow:2px 2px 18px #f3f3f3;}
     </style>
     """, unsafe_allow_html=True)
-    # GLOBAL HEADER SECTION (always at the top)
     st.title("Welcome to Royal Ice Cream")
     st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg", caption="Royal Ice Cream", use_column_width=True)
     st.write(f"📞 Helpline: {HELPLINE}")
-    main_navbar("main")  # Navbar only here, at the top
+    main_navbar("main") # Navbar only TOP, never inside other pages!
 
-    # Controlled page state
     page = st.session_state.get("page", "home")
 
+    # Only one section visible at a time
     if page == "home":
         choice = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"])
         if choice == "Terms & Conditions":
@@ -66,7 +63,7 @@ def main():
     elif page == "register":
         register_user(st.session_state["user_contact_for_reg"])
     elif page == "dashboard":
-        user_dashboard(st.session_state["user_contact"])
+        user_dashboard(st.session_state.get("user_contact", None))
     elif page == "profile":
         user_profile()
 
@@ -89,9 +86,6 @@ def admin_login():
         st.session_state["admin_logged_in"] = True
         st.session_state.page = "admin_dashboard"
         st.experimental_rerun()
-    if st.session_state.get("admin_logged_in"):
-        st.session_state.page = "admin_dashboard"
-        st.experimental_rerun()
 
 def admin_dashboard():
     st.header("Admin Dashboard")
@@ -110,7 +104,6 @@ def admin_dashboard():
             "created_by": "admin"
         })
         st.success("User created!")
-    # Product management
     st.subheader("Manage Products")
     prod_name = st.text_input("Product Name", key="prod_add_name")
     price = st.number_input("Price (₹)", min_value=1, key="prod_add_price")
@@ -130,7 +123,6 @@ def admin_dashboard():
     if st.button("Remove Product", key="prod_remove_btn"):
         db.products.delete_one({"name": remove_prod})
         st.warning("Product removed!")
-    # Analytics
     st.subheader("Product Analytics")
     products = list(db.products.find())
     if products:
@@ -195,16 +187,12 @@ def register_user(contact):
         st.success("Registered!")
         st.session_state["user_logged_in"] = True
         st.session_state["user_contact"] = contact
-        st.session_state["user_register_mode"] = False
         st.session_state.page = "dashboard"
         st.experimental_rerun()
 
 def user_dashboard(contact):
-    user = db.users.find_one({"contact": contact})
-    if user:
-        user_name = f"{user.get('first_name','')} {user.get('last_name','')}".strip()
-    else:
-        user_name = "Unknown User"
+    user = db.users.find_one({"contact": contact}) if contact else None
+    user_name = (f"{user.get('first_name','')} {user.get('last_name','')}".strip() if user else "Unknown User")
     st.subheader("Your Details")
     st.write(f"User Name: {user_name}")
     st.write(user)
@@ -220,17 +208,17 @@ def user_dashboard(contact):
           <span> | Remaining: <b>{p['remaining_qty']}</b></span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}_userdashboard"):
+        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}_dash"):
             cart.append(p["name"])
             st.session_state.cart = cart
             st.success(f"{p['name']} added to Cart!")
-        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}_userdashboard"):
+        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}_dash"):
             wish.append(p["name"])
             st.session_state.wish = wish
             st.success(f"{p['name']} added to Wishlist!")
-        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}_userdashboard")
-        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_userdashboard")
-        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_userdashboard"):
+        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}_dash")
+        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_dash")
+        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_dash"):
             db.feedback.insert_one({
                 "user": user_name,
                 "product": p["name"],
@@ -260,25 +248,6 @@ def user_dashboard(contact):
         st.markdown(f"Total Amount: <span style='font-size:22px;color:green;'>₹{total}</span>", unsafe_allow_html=True)
         st.write("Payment method: (Online/Offline)")
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
-
-        # CSV DOWNLOAD
-        invoice = pd.DataFrame({
-            "Item Name": st.session_state.get("cart", []),
-            "Price": [db.products.find_one({'name': i})['price'] for i in st.session_state.get("cart", [])]
-        })
-        invoice["User Name"] = user_name
-        invoice["Order ID"] = str(order_id)
-        invoice["Order Date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-        invoice["Total"] = total
-
-        csv = invoice.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Download Invoice CSV",
-            data=csv,
-            file_name=f"invoice_{order_id}.csv",
-            mime="text/csv"
-        )
-        # Clear cart & wish after order
         st.session_state.cart = []
         st.session_state.wish = []
 
