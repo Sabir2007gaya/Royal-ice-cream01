@@ -17,7 +17,7 @@ def main():
     st.title("Welcome to Royal Ice Cream")
 
     # Add a sample image
-    st.image("20241101.jpg", caption="Royal Ice Cream", use_column_width=True)
+    st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg", caption="Royal Ice Cream", use_column_width=True)
 
     st.write(f"📞 Helpline: {HELPLINE}")
     option = st.selectbox("Choose an option:", ["User", "Admin", "Terms and Conditions"])
@@ -180,6 +180,7 @@ def user_dashboard(user_contact):
 
 if __name__ == "__main__":
     main()
+
 
 
 
