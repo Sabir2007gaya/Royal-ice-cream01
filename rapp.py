@@ -54,11 +54,8 @@ def terms_and_conditions():
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
         st.session_state.page = None
-def main():
-    st.markdown("""...css...""", unsafe_allow_html=True)
-    st.title("Welcome to Royal Ice Cream")
-    main_navbar("main")  # Only once here
-    # ... rest as before ...
+def send_otp(contact, mode):
+    st.info(f"OTP sent to {contact} ({mode}) [simulation].")
 
 
 def admin_login():
