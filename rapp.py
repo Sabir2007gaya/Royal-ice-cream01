@@ -43,14 +43,13 @@ def main():
     # Only one section visible at a time
     if page == "home":
         choice = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"])
-        if choice == "Terms & Conditions":
-            st.session_state.page = "terms"
-            st.experimental_rerun()
-        elif choice == "Admin":
-            st.session_state.page = "admin_login"
-            st.experimental_rerun()
-        elif choice == "User":
-            st.session_state.page = "user_login"
+        if st.button("Go", key="home_go"):
+            if choice == "Terms & Conditions":
+                st.session_state.page = "terms"
+            elif choice == "Admin":
+                st.session_state.page = "admin_login"
+            elif choice == "User":
+                st.session_state.page = "user_login"
             st.experimental_rerun()
     elif page == "terms":
         terms_and_conditions()
