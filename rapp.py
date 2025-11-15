@@ -35,16 +35,16 @@ def main():
         .product-card {margin: 10px 0; padding: 12px; border: 1px solid #ececec; border-radius: 7px; box-shadow:2px 2px 18px #f3f3f3;}
     </style>
     """, unsafe_allow_html=True)
+    # GLOBAL HEADER SECTION (always at the top)
     st.title("Welcome to Royal Ice Cream")
+    st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg", caption="Royal Ice Cream", use_column_width=True)
+    st.write(f"📞 Helpline: {HELPLINE}")
     main_navbar("main")  # Navbar only here, at the top
 
     # Controlled page state
     page = st.session_state.get("page", "home")
 
     if page == "home":
-        st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
-            caption="Royal Ice Cream", use_column_width=True)
-        st.write(f"📞 Helpline: {HELPLINE}")
         choice = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"])
         if choice == "Terms & Conditions":
             st.session_state.page = "terms"
@@ -86,7 +86,6 @@ def admin_login():
     contact = st.text_input("Contact (Admin)", key="admin_login_contact")
     password = st.text_input("Password", type="password", key="admin_login_password")
     if st.button("Login", key="admin_login_btn"):
-        # Simulate admin password (replace with real admin auth)
         st.session_state["admin_logged_in"] = True
         st.session_state.page = "admin_dashboard"
         st.experimental_rerun()
@@ -279,7 +278,7 @@ def user_dashboard(contact):
             file_name=f"invoice_{order_id}.csv",
             mime="text/csv"
         )
-        # Clear cart after order
+        # Clear cart & wish after order
         st.session_state.cart = []
         st.session_state.wish = []
 
