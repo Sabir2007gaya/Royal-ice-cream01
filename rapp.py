@@ -13,7 +13,7 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages - NOW WITH UNIQUE KEYS
+# Navbar for all pages - SHOW ONLY FROM 'main'
 def main_navbar(page_name=""):
     col1, col2 = st.columns([5,1])
     with col1:
@@ -34,7 +34,8 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     st.title("Welcome to Royal Ice Cream")
-    main_navbar("main")
+    main_navbar("main")  # NAVBAR ONLY HERE (top)
+
     st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
           caption="Royal Ice Cream", use_column_width=True)
     st.write(f"📞 Helpline: {HELPLINE}")
@@ -49,17 +50,15 @@ def main():
         user_login()
 
 def terms_and_conditions():
-    main_navbar("terms")
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
         st.session_state.page = None
+
 def send_otp(contact, mode):
     st.info(f"OTP sent to {contact} ({mode}) [simulation].")
 
-
 def admin_login():
-    main_navbar("admin_login")
     st.header("Admin Login")
     mode = st.radio("Login via:", ["Mobile Number", "Email"], key="admin_login_mode")
     contact = st.text_input("Contact (Admin)", key="admin_login_contact")
@@ -71,7 +70,6 @@ def admin_login():
         admin_dashboard()
 
 def admin_dashboard():
-    main_navbar("admin_dashboard")
     st.header("Admin Dashboard")
     st.subheader("Register New User")
     first_name = st.text_input("First Name (Admin)", key="admin_add_first")
@@ -129,7 +127,6 @@ def admin_dashboard():
         st.info("No products found.")
 
 def user_login():
-    main_navbar("user_login")
     st.header("User Registration/Login")
     mode = st.radio("Login/Register via:", ["Mobile Number", "Email"], key="user_login_mode")
     contact = st.text_input("Contact (User)", key="user_login_contact")
@@ -154,7 +151,6 @@ def user_login():
         user_dashboard(st.session_state["user_contact"])
 
 def register_user(contact):
-    main_navbar("register_user")
     st.subheader("Register")
     first_name = st.text_input("First Name", key="user_register_first")
     last_name = st.text_input("Last Name", key="user_register_last")
@@ -177,9 +173,13 @@ def register_user(contact):
         st.session_state["user_register_mode"] = False
 
 def user_dashboard(contact):
-    main_navbar("user_dashboard")
-    st.subheader("Your Details")
     user = db.users.find_one({"contact": contact})
+    if user:
+        user_name = f"{user.get('first_name','')} {user.get('last_name','')}".strip()
+    else:
+        user_name = "Unknown User"
+    st.subheader("Your Details")
+    st.write(f"User Name: {user_name}")
     st.write(user)
     st.subheader("Products")
     products = list(db.products.find())
@@ -205,7 +205,7 @@ def user_dashboard(contact):
         feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_userdashboard")
         if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_userdashboard"):
             db.feedback.insert_one({
-                "user": contact,
+                "user": user_name,
                 "product": p["name"],
                 "rating": rating,
                 "text": feedback,
@@ -221,7 +221,7 @@ def user_dashboard(contact):
     st.write(st.session_state.get("wish", []))
     if st.button("Place Order", key="order_place_btn"):
         order_id = db.orders.insert_one({
-            "user": contact,
+            "user": user_name,
             "cart": st.session_state.get("cart", []),
             "timestamp": datetime.now(),
             "payment": "Pending"
@@ -235,12 +235,16 @@ def user_dashboard(contact):
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
 
 def user_profile():
-    main_navbar("profile")
     st.header("My Profile")
     contact = st.session_state.get("user_contact", None)
     if contact:
         user = db.users.find_one({"contact": contact})
-        st.write(user)
+        if user:
+            user_name = f"{user.get('first_name','')} {user.get('last_name','')}".strip()
+            st.write(f"User Name: {user_name}")
+            st.write(user)
+        else:
+            st.write("Profile not found.")
     else:
         st.write("No profile loaded.")
     if st.button("Back", key="profile_back_btn"):
@@ -248,4 +252,3 @@ def user_profile():
 
 if __name__ == "__main__":
     main()
-
