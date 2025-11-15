@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from pymongo import MongoClient
 from datetime import datetime
 import bcrypt
@@ -13,12 +14,13 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages - SHOW ONLY FROM 'main'
+# Navbar for all pages - ONLY render from main()
 def main_navbar(page_name=""):
     col1, col2 = st.columns([5,1])
     with col1:
         if st.button("👤 My Profile", key=f"navbar_profile_{page_name}"):
             st.session_state.page = "profile"
+            st.experimental_rerun()
     with col2:
         if st.button("🚪 Logout", key=f"navbar_logout_{page_name}"):
             for k in list(st.session_state.keys()):
@@ -34,26 +36,46 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     st.title("Welcome to Royal Ice Cream")
-    main_navbar("main")  # NAVBAR ONLY HERE (top)
+    main_navbar("main")  # Navbar only here, at the top
 
-    st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
-          caption="Royal Ice Cream", use_column_width=True)
-    st.write(f"📞 Helpline: {HELPLINE}")
-    page = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"], key="page_selector")
-    if st.session_state.get("page") == "profile":
-        user_profile()
-    elif page == "Terms & Conditions":
+    # Controlled page state
+    page = st.session_state.get("page", "home")
+
+    if page == "home":
+        st.image("https://5.imimg.com/data5/SELLER/Default/2022/4/GA/IB/YJ/62705623/amul-ice-cream-tenkasi.jpg",
+            caption="Royal Ice Cream", use_column_width=True)
+        st.write(f"📞 Helpline: {HELPLINE}")
+        choice = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"])
+        if choice == "Terms & Conditions":
+            st.session_state.page = "terms"
+            st.experimental_rerun()
+        elif choice == "Admin":
+            st.session_state.page = "admin_login"
+            st.experimental_rerun()
+        elif choice == "User":
+            st.session_state.page = "user_login"
+            st.experimental_rerun()
+    elif page == "terms":
         terms_and_conditions()
-    elif page == "Admin":
+    elif page == "admin_login":
         admin_login()
-    elif page == "User":
+    elif page == "admin_dashboard":
+        admin_dashboard()
+    elif page == "user_login":
         user_login()
+    elif page == "register":
+        register_user(st.session_state["user_contact_for_reg"])
+    elif page == "dashboard":
+        user_dashboard(st.session_state["user_contact"])
+    elif page == "profile":
+        user_profile()
 
 def terms_and_conditions():
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
-        st.session_state.page = None
+        st.session_state.page = "home"
+        st.experimental_rerun()
 
 def send_otp(contact, mode):
     st.info(f"OTP sent to {contact} ({mode}) [simulation].")
@@ -64,10 +86,13 @@ def admin_login():
     contact = st.text_input("Contact (Admin)", key="admin_login_contact")
     password = st.text_input("Password", type="password", key="admin_login_password")
     if st.button("Login", key="admin_login_btn"):
-        # Simulate admin password (improve as per your real user logic)
+        # Simulate admin password (replace with real admin auth)
         st.session_state["admin_logged_in"] = True
+        st.session_state.page = "admin_dashboard"
+        st.experimental_rerun()
     if st.session_state.get("admin_logged_in"):
-        admin_dashboard()
+        st.session_state.page = "admin_dashboard"
+        st.experimental_rerun()
 
 def admin_dashboard():
     st.header("Admin Dashboard")
@@ -116,10 +141,9 @@ def admin_dashboard():
             f"**Most Sold:** {fav_sell['name']} ({fav_sell['daily_sale']} sold) :star:<br>" +
             f"**Most Liked:** {fav_like['name']} ({fav_like['likes']} likes) :heart:",
             unsafe_allow_html=True)
-        for i, p in enumerate(products):
+        for p in products:
             st.markdown(
-                f"<div class='product-card'><span style='font-size:18px;'>{p['name']}</span> | "
-                f"Price: <span style='color:red;'>₹{p['price']}</span> | Remaining: {p['remaining_qty']} | Daily Sale: {p['daily_sale']}</div>",
+                f"<div class='product-card'><span style='font-size:18px;'>{p['name']}</span> | Price: <span style='color:red;'>₹{p['price']}</span> | Remaining: {p['remaining_qty']} | Daily Sale: {p['daily_sale']}</div>",
                 unsafe_allow_html=True)
             if p["daily_sale"] == 0:
                 st.info(f"📉 Suggest Discount on {p['name']}", icon="🔔")
@@ -133,22 +157,24 @@ def user_login():
     password = st.text_input("Password", type="password", key="user_login_pw")
     if st.button("Send OTP", key="user_login_otp_btn"):
         send_otp(contact, mode)
-        # Check if user exists
         user = db.users.find_one({"contact": contact})
         if not user:
             st.session_state["user_register_mode"] = True
             st.session_state["user_contact_for_reg"] = contact
+            st.session_state.page = "register"
+            st.experimental_rerun()
         else:
             if bcrypt.checkpw(password.encode(), user["password"]):
                 st.success("Logged in successfully!")
                 st.session_state["user_logged_in"] = True
                 st.session_state["user_contact"] = contact
+                st.session_state.page = "dashboard"
+                st.experimental_rerun()
             else:
                 st.error("Wrong password!")
-    if st.session_state.get("user_register_mode"):
-        register_user(st.session_state["user_contact_for_reg"])
     if st.session_state.get("user_logged_in"):
-        user_dashboard(st.session_state["user_contact"])
+        st.session_state.page = "dashboard"
+        st.experimental_rerun()
 
 def register_user(contact):
     st.subheader("Register")
@@ -171,6 +197,8 @@ def register_user(contact):
         st.session_state["user_logged_in"] = True
         st.session_state["user_contact"] = contact
         st.session_state["user_register_mode"] = False
+        st.session_state.page = "dashboard"
+        st.experimental_rerun()
 
 def user_dashboard(contact):
     user = db.users.find_one({"contact": contact})
@@ -234,6 +262,27 @@ def user_dashboard(contact):
         st.write("Payment method: (Online/Offline)")
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
 
+        # CSV DOWNLOAD
+        invoice = pd.DataFrame({
+            "Item Name": st.session_state.get("cart", []),
+            "Price": [db.products.find_one({'name': i})['price'] for i in st.session_state.get("cart", [])]
+        })
+        invoice["User Name"] = user_name
+        invoice["Order ID"] = str(order_id)
+        invoice["Order Date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        invoice["Total"] = total
+
+        csv = invoice.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="Download Invoice CSV",
+            data=csv,
+            file_name=f"invoice_{order_id}.csv",
+            mime="text/csv"
+        )
+        # Clear cart after order
+        st.session_state.cart = []
+        st.session_state.wish = []
+
 def user_profile():
     st.header("My Profile")
     contact = st.session_state.get("user_contact", None)
@@ -248,7 +297,8 @@ def user_profile():
     else:
         st.write("No profile loaded.")
     if st.button("Back", key="profile_back_btn"):
-        st.session_state.page = None
+        st.session_state.page = "dashboard"
+        st.experimental_rerun()
 
 if __name__ == "__main__":
     main()
