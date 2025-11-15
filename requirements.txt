@@ -1,2 +1,6 @@
 streamlit
+bcrypt
 pymongo
+numpy
+pandas
+matplotlib
