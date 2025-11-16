@@ -13,26 +13,16 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages - profile left, logout right
+# Navbar for all pages - Proper Left (profile), Right (logout)
 def main_navbar():
-    col1, col2 = st.columns([1, 5, 1])
+    col1, col2, col3 = st.columns([1, 5, 1])
     with col1:
-        st.markdown(
-            "<div style='text-align:left;'>"
-            "<button style='background:#2266AA;color:white;font-weight:600;' "
-            "onclick=\"window.location.href='#profile'\">👤 My Profile</button>"
-            "</div>", unsafe_allow_html=True)
-        if st.button("My Profile", key="navbar_profile_btn"):
+        if st.button("👤 My Profile", key="navbar_profile_btn"):
             st.session_state.page = "profile"
     with col2:
-        st.write("")
-    with col2.next():
-        st.markdown(
-            "<div style='text-align:right;'>"
-            "<button style='background:#A60056;color:white;font-weight:600;' "
-            "onclick=\"window.location.href='#logout'\">🚪 Logout</button>"
-            "</div>", unsafe_allow_html=True)
-        if st.button("Logout", key="navbar_logout_btn"):
+        pass  # Center column can be used for a logo or left empty
+    with col3:
+        if st.button("🚪 Logout", key="navbar_logout_btn"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.experimental_rerun()
