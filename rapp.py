@@ -29,7 +29,7 @@ def main_navbar():
             st.experimental_rerun()
 
 def main():
-    main_navbar()
+    main_navbar()  # ONLY called here once per rerun!
     st.markdown("""
     <style>
         .stButton > button {background-color: #2266AA; color:white; font-weight:600;}
@@ -52,7 +52,6 @@ def main():
         user_login()
 
 def terms_and_conditions():
-    main_navbar()
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
@@ -62,7 +61,6 @@ def send_otp(username, mode):
     st.info(f"OTP sent to {username} ({mode}) [simulation].")
 
 def admin_login():
-    main_navbar()
     st.header("Admin Login")
     page_name = "admin_login"
     mode = st.radio("Login via:", ["User Name", "Email"], key=f"admin_login_mode_{page_name}")
@@ -74,7 +72,6 @@ def admin_login():
         admin_dashboard()
 
 def admin_dashboard():
-    main_navbar()
     st.header("Admin Dashboard")
     st.subheader("Register New User")
     page_name = "admin_dashboard"
@@ -135,7 +132,6 @@ def admin_dashboard():
         st.info("No products found.")
 
 def user_login():
-    main_navbar()
     st.header("User Registration/Login")
     page_name = "user_login"
     mode = st.radio("Login/Register via:", ["User Name", "Email"], key=f"user_login_mode_{page_name}")
@@ -161,7 +157,6 @@ def user_login():
         user_dashboard(st.session_state["user_username"])
 
 def register_user(username):
-    main_navbar()
     st.subheader("Register")
     page_name = "register_user"
     first_name = st.text_input("First Name", key=f"user_register_first_{page_name}")
@@ -185,7 +180,6 @@ def register_user(username):
         st.session_state["user_register_mode"] = False
 
 def user_dashboard(username):
-    main_navbar()
     st.subheader("Your Details")
     page_name = "user_dashboard"
     user = db.users.find_one({"username": username})
@@ -244,7 +238,6 @@ def user_dashboard(username):
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
 
 def user_profile():
-    main_navbar()
     st.header("My Profile")
     page_name = "profile"
     username = st.session_state.get("user_username", None)
