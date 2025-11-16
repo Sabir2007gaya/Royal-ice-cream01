@@ -13,16 +13,17 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
-# Navbar for all pages - Proper Left (profile), Right (logout)
+# Navbar for all pages - unique key per session page
 def main_navbar():
+    page_name = st.session_state.get("page", "main")
     col1, col2, col3 = st.columns([1, 5, 1])
     with col1:
-        if st.button("👤 My Profile", key="navbar_profile_btn"):
+        if st.button("👤 My Profile", key=f"navbar_profile_btn_{page_name}"):
             st.session_state.page = "profile"
     with col2:
-        pass  # Center column can be used for a logo or left empty
+        pass  # Center column can be used for a logo or kept empty
     with col3:
-        if st.button("🚪 Logout", key="navbar_logout_btn"):
+        if st.button("🚪 Logout", key=f"navbar_logout_btn_{page_name}"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.experimental_rerun()
@@ -63,10 +64,11 @@ def send_otp(username, mode):
 def admin_login():
     main_navbar()
     st.header("Admin Login")
-    mode = st.radio("Login via:", ["User Name", "Email"], key="admin_login_mode")
-    username = st.text_input("User Name (Admin)", key="admin_login_username")
-    password = st.text_input("Password", type="password", key="admin_login_password")
-    if st.button("Login", key="admin_login_btn"):
+    page_name = "admin_login"
+    mode = st.radio("Login via:", ["User Name", "Email"], key=f"admin_login_mode_{page_name}")
+    username = st.text_input("User Name (Admin)", key=f"admin_login_username_{page_name}")
+    password = st.text_input("Password", type="password", key=f"admin_login_password_{page_name}")
+    if st.button("Login", key=f"admin_login_btn_{page_name}"):
         st.session_state["admin_logged_in"] = True
     if st.session_state.get("admin_logged_in"):
         admin_dashboard()
@@ -75,12 +77,13 @@ def admin_dashboard():
     main_navbar()
     st.header("Admin Dashboard")
     st.subheader("Register New User")
-    first_name = st.text_input("First Name (Admin)", key="admin_add_first")
-    last_name = st.text_input("Last Name (Admin)", key="admin_add_last")
-    age = st.number_input("Age (Admin)", min_value=1, max_value=120, key="admin_add_age")
-    username = st.text_input("User Name (Admin)", key="admin_add_username")
-    user_password = st.text_input("Set Password", type="password", key="admin_set_pw")
-    if st.button("Create User", key="admin_user_create_btn"):
+    page_name = "admin_dashboard"
+    first_name = st.text_input("First Name (Admin)", key=f"admin_add_first_{page_name}")
+    last_name = st.text_input("Last Name (Admin)", key=f"admin_add_last_{page_name}")
+    age = st.number_input("Age (Admin)", min_value=1, max_value=120, key=f"admin_add_age_{page_name}")
+    username = st.text_input("User Name (Admin)", key=f"admin_add_username_{page_name}")
+    user_password = st.text_input("Set Password", type="password", key=f"admin_set_pw_{page_name}")
+    if st.button("Create User", key=f"admin_user_create_btn_{page_name}"):
         pw_hash = bcrypt.hashpw(user_password.encode(), bcrypt.gensalt())
         db.users.insert_one({
             "first_name": first_name,
@@ -93,10 +96,10 @@ def admin_dashboard():
         st.success("User created!")
     # Product management
     st.subheader("Manage Products")
-    prod_name = st.text_input("Product Name", key="prod_add_name")
-    price = st.number_input("Price (₹)", min_value=1, key="prod_add_price")
-    qty = st.number_input("Total Qty", min_value=1, key="prod_add_qty")
-    if st.button("Add Product", key="prod_add_btn"):
+    prod_name = st.text_input("Product Name", key=f"prod_add_name_{page_name}")
+    price = st.number_input("Price (₹)", min_value=1, key=f"prod_add_price_{page_name}")
+    qty = st.number_input("Total Qty", min_value=1, key=f"prod_add_qty_{page_name}")
+    if st.button("Add Product", key=f"prod_add_btn_{page_name}"):
         db.products.insert_one({
             "name": prod_name,
             "price": price,
@@ -107,8 +110,8 @@ def admin_dashboard():
             "added_on": datetime.now()
         })
         st.success("Product added!")
-    remove_prod = st.text_input("Product name to remove", key="prod_remove_name")
-    if st.button("Remove Product", key="prod_remove_btn"):
+    remove_prod = st.text_input("Product name to remove", key=f"prod_remove_name_{page_name}")
+    if st.button("Remove Product", key=f"prod_remove_btn_{page_name}"):
         db.products.delete_one({"name": remove_prod})
         st.warning("Product removed!")
     # Analytics
@@ -134,10 +137,11 @@ def admin_dashboard():
 def user_login():
     main_navbar()
     st.header("User Registration/Login")
-    mode = st.radio("Login/Register via:", ["User Name", "Email"], key="user_login_mode")
-    username = st.text_input("User Name (User)", key="user_login_username")
-    password = st.text_input("Password", type="password", key="user_login_pw")
-    if st.button("Send OTP", key="user_login_otp_btn"):
+    page_name = "user_login"
+    mode = st.radio("Login/Register via:", ["User Name", "Email"], key=f"user_login_mode_{page_name}")
+    username = st.text_input("User Name (User)", key=f"user_login_username_{page_name}")
+    password = st.text_input("Password", type="password", key=f"user_login_pw_{page_name}")
+    if st.button("Send OTP", key=f"user_login_otp_btn_{page_name}"):
         send_otp(username, mode)
         # Check if user exists
         user = db.users.find_one({"username": username})
@@ -159,12 +163,13 @@ def user_login():
 def register_user(username):
     main_navbar()
     st.subheader("Register")
-    first_name = st.text_input("First Name", key="user_register_first")
-    last_name = st.text_input("Last Name", key="user_register_last")
-    age = st.number_input("Age", min_value=1, max_value=120, key="user_register_age")
-    location = st.text_input("Location", key="user_register_loc")
-    password = st.text_input("Set Password", type="password", key="user_register_pw")
-    if st.button("Register", key="user_register_btn"):
+    page_name = "register_user"
+    first_name = st.text_input("First Name", key=f"user_register_first_{page_name}")
+    last_name = st.text_input("Last Name", key=f"user_register_last_{page_name}")
+    age = st.number_input("Age", min_value=1, max_value=120, key=f"user_register_age_{page_name}")
+    location = st.text_input("Location", key=f"user_register_loc_{page_name}")
+    password = st.text_input("Set Password", type="password", key=f"user_register_pw_{page_name}")
+    if st.button("Register", key=f"user_register_btn_{page_name}"):
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
         db.users.insert_one({
             "username": username,
@@ -182,6 +187,7 @@ def register_user(username):
 def user_dashboard(username):
     main_navbar()
     st.subheader("Your Details")
+    page_name = "user_dashboard"
     user = db.users.find_one({"username": username})
     st.write(user)
     st.subheader("Products")
@@ -196,17 +202,17 @@ def user_dashboard(username):
           <span> | Remaining: <b>{p['remaining_qty']}</b></span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}_userdashboard"):
+        if st.button(f"Add {p['name']} to Cart", key=f"cart_add_{idx}_{page_name}"):
             cart.append(p["name"])
             st.session_state.cart = cart
             st.success(f"{p['name']} added to Cart!")
-        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}_userdashboard"):
+        if st.button(f"Add {p['name']} to Wishlist", key=f"wish_add_{idx}_{page_name}"):
             wish.append(p["name"])
             st.session_state.wish = wish
             st.success(f"{p['name']} added to Wishlist!")
-        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}_userdashboard")
-        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_userdashboard")
-        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_userdashboard"):
+        rating = st.slider(f"Rate {p['name']}", 1, 5, 3, key=f"rate_{idx}_{page_name}")
+        feedback = st.text_input(f"Feedback for {p['name']}", key=f"fb_{idx}_{page_name}")
+        if st.button(f"Submit Feedback for {p['name']}", key=f"fb_submit_{idx}_{page_name}"):
             db.feedback.insert_one({
                 "user": username,
                 "product": p["name"],
@@ -222,7 +228,7 @@ def user_dashboard(username):
     st.write(st.session_state.get("cart", []))
     st.subheader("Wishlist")
     st.write(st.session_state.get("wish", []))
-    if st.button("Place Order", key="order_place_btn"):
+    if st.button("Place Order", key=f"order_place_btn_{page_name}"):
         order_id = db.orders.insert_one({
             "user": username,
             "cart": st.session_state.get("cart", []),
@@ -240,13 +246,14 @@ def user_dashboard(username):
 def user_profile():
     main_navbar()
     st.header("My Profile")
+    page_name = "profile"
     username = st.session_state.get("user_username", None)
     if username:
         user = db.users.find_one({"username": username})
         st.write(user)
     else:
         st.write("No profile loaded.")
-    if st.button("Back", key="profile_back_btn"):
+    if st.button("Back", key=f"profile_back_btn_{page_name}"):
         st.session_state.page = None
 
 if __name__ == "__main__":
