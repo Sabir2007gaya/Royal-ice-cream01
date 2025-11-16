@@ -13,7 +13,32 @@ db = get_db()
 
 HELPLINE = "+91-9204441036"
 
+# Navbar for all pages - profile left, logout right
+def main_navbar():
+    col1, col2 = st.columns([1, 5, 1])
+    with col1:
+        st.markdown(
+            "<div style='text-align:left;'>"
+            "<button style='background:#2266AA;color:white;font-weight:600;' "
+            "onclick=\"window.location.href='#profile'\">👤 My Profile</button>"
+            "</div>", unsafe_allow_html=True)
+        if st.button("My Profile", key="navbar_profile_btn"):
+            st.session_state.page = "profile"
+    with col2:
+        st.write("")
+    with col2.next():
+        st.markdown(
+            "<div style='text-align:right;'>"
+            "<button style='background:#A60056;color:white;font-weight:600;' "
+            "onclick=\"window.location.href='#logout'\">🚪 Logout</button>"
+            "</div>", unsafe_allow_html=True)
+        if st.button("Logout", key="navbar_logout_btn"):
+            for k in list(st.session_state.keys()):
+                del st.session_state[k]
+            st.experimental_rerun()
+
 def main():
+    main_navbar()
     st.markdown("""
     <style>
         .stButton > button {background-color: #2266AA; color:white; font-weight:600;}
@@ -26,7 +51,9 @@ def main():
           caption="Royal Ice Cream", use_column_width=True)
     st.write(f"📞 Helpline: {HELPLINE}")
     page = st.selectbox("Choose an option:", ["User", "Admin", "Terms & Conditions"], key="page_selector")
-    if page == "Terms & Conditions":
+    if st.session_state.get("page") == "profile":
+        user_profile()
+    elif page == "Terms & Conditions":
         terms_and_conditions()
     elif page == "Admin":
         admin_login()
@@ -34,6 +61,7 @@ def main():
         user_login()
 
 def terms_and_conditions():
+    main_navbar()
     st.header("Terms and Conditions")
     st.write("Add your detailed terms & conditions here.")
     if st.button("Back", key="terms_back"):
@@ -43,6 +71,7 @@ def send_otp(username, mode):
     st.info(f"OTP sent to {username} ({mode}) [simulation].")
 
 def admin_login():
+    main_navbar()
     st.header("Admin Login")
     mode = st.radio("Login via:", ["User Name", "Email"], key="admin_login_mode")
     username = st.text_input("User Name (Admin)", key="admin_login_username")
@@ -53,6 +82,7 @@ def admin_login():
         admin_dashboard()
 
 def admin_dashboard():
+    main_navbar()
     st.header("Admin Dashboard")
     st.subheader("Register New User")
     first_name = st.text_input("First Name (Admin)", key="admin_add_first")
@@ -112,6 +142,7 @@ def admin_dashboard():
         st.info("No products found.")
 
 def user_login():
+    main_navbar()
     st.header("User Registration/Login")
     mode = st.radio("Login/Register via:", ["User Name", "Email"], key="user_login_mode")
     username = st.text_input("User Name (User)", key="user_login_username")
@@ -136,6 +167,7 @@ def user_login():
         user_dashboard(st.session_state["user_username"])
 
 def register_user(username):
+    main_navbar()
     st.subheader("Register")
     first_name = st.text_input("First Name", key="user_register_first")
     last_name = st.text_input("Last Name", key="user_register_last")
@@ -158,6 +190,7 @@ def register_user(username):
         st.session_state["user_register_mode"] = False
 
 def user_dashboard(username):
+    main_navbar()
     st.subheader("Your Details")
     user = db.users.find_one({"username": username})
     st.write(user)
@@ -213,6 +246,18 @@ def user_dashboard(username):
         st.markdown(f"Total Amount: <span style='font-size:22px;color:green;'>₹{total}</span>", unsafe_allow_html=True)
         st.write("Payment method: (Online/Offline)")
         st.write("Thanks for choosing Royal Ice Cream and visit again!")
+
+def user_profile():
+    main_navbar()
+    st.header("My Profile")
+    username = st.session_state.get("user_username", None)
+    if username:
+        user = db.users.find_one({"username": username})
+        st.write(user)
+    else:
+        st.write("No profile loaded.")
+    if st.button("Back", key="profile_back_btn"):
+        st.session_state.page = None
 
 if __name__ == "__main__":
     main()
